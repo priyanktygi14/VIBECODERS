@@ -1,24 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Safe Routes App</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  
   <style>
-    #map { height: 90vh; }
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    .report-box { padding: 10px; background: #f8f8f8; }
+    #map { height: 90vh; z-index: 0; }
   </style>
 </head>
-<body>
-  <h2 style="text-align:center;">🚦 Safe Routes App</h2>
-  <div id="map"></div>
-  <div class="report-box">
-    <input type="text" id="desc" placeholder="Describe issue (e.g., pothole)">
-    <button id="reportBtn">Report Issue</button>
+<body class="bg-gray-100 font-sans">
+  
+  <!-- Header -->
+  <header class="bg-green-600 text-white shadow-lg p-4 flex justify-center items-center">
+    <h1 class="text-2xl font-bold flex items-center gap-2">
+      🚦 Safe Routes App
+    </h1>
+  </header>
+
+  <!-- Map -->
+  <div id="map" class="relative"></div>
+
+  <!-- Report Box (floating card) -->
+  <div class="absolute bottom-5 left-1/2 transform -translate-x-1/2 w-11/12 md:w-1/2 lg:w-1/3">
+    <div class="bg-white shadow-lg rounded-2xl p-4 flex flex-col gap-3 border border-gray-200">
+      <label for="desc" class="text-gray-700 font-medium">Report an Issue</label>
+      <input 
+        type="text" 
+        id="desc" 
+        placeholder="Describe issue (e.g., pothole, waterlogging)" 
+        class="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 outline-none"
+      >
+      <button 
+        id="reportBtn"
+        class="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg py-2 transition">
+        Submit Report
+      </button>
+    </div>
   </div>
 
   <script>
+    // Initialize map
     let map = L.map('map').setView([28.6139, 77.2090], 12); // Default Delhi
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
