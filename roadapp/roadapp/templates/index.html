@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Road Health Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+  <div id="map"></div>
+  <button id="reportBtn" onclick="openModal()">+ Report Issue</button>
+
+  <!-- Modal -->
+  <div id="reportModal">
+    <div id="reportModalContent">
+      <h3>Report Road Issue</h3>
+      <textarea id="issueText" placeholder="Describe issue..."></textarea>
+      <button id="submitReport" onclick="submitReport()">Submit</button>
+      <button id="closeModal" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    let map = L.map('map').setView([28.6139, 77.2090], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+
+    function loadReports() {
+      fetch("/get_reports")
+        .then(res => res.json())
+        .then(data => {
+          data.forEach(report => {
+            let marker = L.marker([report.lat, report.lng]).addTo(map);
+            marker.bindPopup(`
+              <b>${report.issue}</b><br>
+              <button onclick="resolveIssue(${report.lat}, ${report.lng}, '${report.issue}')">Mark Resolved</button>
+            `);
+          });
+        });
+    }
+
+    function openModal(){ document.getElementById("reportModal").style.display="flex"; }
+    function closeModal(){ document.getElementById("reportModal").style.display="none"; }
+
+    function submitReport(){
+      let issue = document.getElementById("issueText").value;
+      let center = map.getCenter();
+
+      fetch("/report", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({lat: center.lat, lng: center.lng, issue: issue})
+      }).then(() => {
+        closeModal();
+        location.reload();
+      });
+    }
+
+    function resolveIssue(lat, lng, issue){
+      fetch("/resolve", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({lat, lng, issue})
+      }).then(() => location.reload());
+    }
+
+    loadReports();
+  </script>
+</body>
+</html>

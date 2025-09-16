@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Safe Routes App</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map { height: 90vh; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .report-box { padding: 10px; background: #f8f8f8; }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">🚦 Safe Routes App</h2>
+  <div id="map"></div>
+  <div class="report-box">
+    <input type="text" id="desc" placeholder="Describe issue (e.g., pothole)">
+    <button id="reportBtn">Report Issue</button>
+  </div>
+
+  <script>
+    let map = L.map('map').setView([28.6139, 77.2090], 12); // Default Delhi
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map);
+
+    let currentMarker = null;
+
+    // Click to set marker
+    map.on("click", function(e) {
+      if (currentMarker) map.removeLayer(currentMarker);
+      currentMarker = L.marker(e.latlng).addTo(map);
+      currentMarker.bindPopup("Selected location").openPopup();
+      currentMarker.lat = e.latlng.lat;
+      currentMarker.lng = e.latlng.lng;
+    });
+
+    // Load saved reports
+    async function loadReports() {
+      try {
+        let res = await fetch("/get_reports");
+        let data = await res.json();
+        data.forEach(r => {
+          L.marker([r[1], r[2]]).addTo(map).bindPopup(r[3]);
+        });
+      } catch (err) {
+        console.error("Error loading reports:", err);
+      }
+    }
+    loadReports();
+
+    // Submit new report
+    document.getElementById("reportBtn").onclick = async function() {
+      if (!currentMarker) {
+        alert("Click on the map to select a location first!");
+        return;
+      }
+      let desc = document.getElementById("desc").value.trim();
+      if (!desc) {
+        alert("Please enter a description.");
+        return;
+      }
+
+      try {
+        let res = await fetch("/add_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: currentMarker.lat,
+            lng: currentMarker.lng,
+            description: desc
+          })
+        });
+
+        let result = await res.json();
+        if (result.status === "success") {
+          alert("✅ Report added!");
+          location.reload();
+        } else {
+          alert("❌ Error: " + (result.message || "Unknown"));
+        }
+      } catch (err) {
+        alert("❌ Could not connect to server.");
+        console.error(err);
+      }
+    };
+  </script>
+</body>
+</html>
