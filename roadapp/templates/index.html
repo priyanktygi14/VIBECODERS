@@ -12,6 +12,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   
+  <!-- Leaflet Geocoder -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  
   <style>
     #map { height: 90vh; z-index: 0; }
   </style>
@@ -54,6 +58,28 @@
     }).addTo(map);
 
     let currentMarker = null;
+
+    // Add search control
+    L.Control.geocoder({
+      defaultMarkGeocode: false
+    })
+    .on('markgeocode', function(e) {
+      const bbox = e.geocode.bbox;
+      const poly = L.polygon([
+        bbox.getSouthEast(),
+        bbox.getNorthEast(),
+        bbox.getNorthWest(),
+        bbox.getSouthWest()
+      ]).addTo(map);
+
+      map.fitBounds(poly.getBounds());
+
+      // Drop marker at searched location
+      if (currentMarker) map.removeLayer(currentMarker);
+      currentMarker = L.marker(e.geocode.center).addTo(map)
+        .bindPopup(e.geocode.name).openPopup();
+    })
+    .addTo(map);
 
     // Click to set marker
     map.on("click", function(e) {
